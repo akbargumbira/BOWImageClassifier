@@ -6,6 +6,7 @@ import pickle
 import argparse
 import cv2
 from codebook import load_codebook
+from utilities import load_serialized_object, serialize_object
 
 
 def get_bow_extractor(feature_detector, codebook):
@@ -41,14 +42,12 @@ def preprocess_image(feature_detector, codebook_filename, output_path):
                 training_data.extend(descriptor)
                 training_labels.append(labels[image_dir])
 
-    with open(output_path, "wb") as f:
-        pickle.dump((training_data, training_labels), f)
+    serialize_object((training_data, training_labels), output_path)
 
 
 def load_dataset(dataset_path):
-    with open(dataset_path, "rb") as f:
-        training_data, training_label = pickle.load(f)
-
+    """Load the dataset from the path."""
+    training_data, training_label = load_serialized_object(dataset_path)
     return training_data, training_label
 
 
