@@ -2,7 +2,6 @@
 import os
 import time
 import sys
-import pickle
 import argparse
 import cv2
 from codebook import load_codebook
@@ -21,28 +20,36 @@ def get_bow_extractor(feature_detector, codebook):
     return bow_extract
 
 
-def preprocess_image(feature_detector, codebook_filename, output_path):
-    """Represent images as histogram of visual codewords."""
+def preprocess_image(feature_detector, bow_extractor, image):
+    """Represent an image as histogram of visual codewords"""
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    keypoints = feature_detector.detect(gray, None)
+    descriptor = bow_extractor.compute(gray, keypoints)
+    return descriptor
+
+
+def preprocessing_images(feature_detector, codebook_filename, image_dir):
+    """Represent training images as histogram of visual codewords
+        accompanied by the label."""
     codebook = load_codebook(codebook_filename)
     bow_extractor = get_bow_extractor(feature_detector, codebook)
     # Training data
     labels = {'badminton': 1, 'bocce': 2, 'croquet': 3, 'polo': 4, 'rowing': 5,
               'RockClimbing': 6, 'sailing': 7, 'snowboarding': 8}
     training_data, training_labels = [], []
-    for image_dir in labels.keys():
-        path = os.path.join(os.curdir, 'images', 'training', image_dir)
+    for group_dir in labels.keys():
+        path = os.path.join(os.curdir, image_dir, group_dir)
         files = os.listdir(path)
         for file in files:
             if file.endswith('.jpg'):
                 image_path = os.path.join(path, file)
                 image = cv2.imread(image_path)
-                gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-                keypoints = feature_detector.detect(gray, None)
-                descriptor = bow_extractor.compute(gray, keypoints)
+                descriptor = preprocess_image(
+                    feature_detector, bow_extractor, image)
                 training_data.extend(descriptor)
-                training_labels.append(labels[image_dir])
+                training_labels.append(labels[group_dir])
 
-    serialize_object((training_data, training_labels), output_path)
+    return training_data, training_labels
 
 
 def load_dataset(dataset_path):
@@ -55,6 +62,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser('Preprocess images into dataset')
     parser.add_argument(
         '-a', '--alg', help='Descriptors algorithm', required=True)
+    parser.add_argument(
+        '-i', '--input', help='Input images root directory', required=True)
     parser.add_argument(
         '-c', '--cbook', help='Codebook filename (under model dir)',required=True)
     parser.add_argument(
@@ -70,18 +79,25 @@ if __name__ == '__main__':
         print 'Wrong -a args. Must be sift or kaze.'
         sys.exit()
 
+    # Input directory
+    image_dir = os.path.join(os.curdir, args['input'])
+    if not os.path.exists(image_dir) and os.path.isdir(image_dir):
+        print 'Root images dir: %s does not exist.' % image_dir
+        sys.exit()
+
     # Codebook
-    codebook_path = os.path.join(os.curdir, 'model', args['cbook'])
+    codebook_path = os.path.join(os.curdir, args['cbook'])
     if not os.path.exists(codebook_path):
-        print 'Codebook: %s under model dir does not exist.' % codebook_path
+        print 'Codebook: %s under root dir does not exist.' % codebook_path
         sys.exit()
 
     # Output dataset file
-    output = os.path.join(os.curdir, 'model', args['output'])
+    output = os.path.join(os.curdir, args['output'])
 
-    # Do the preprocessing
+    # Do the preprocessing and serialize it
     print 'Preprocessing images....'
     start = time.time()
-    preprocess_image(detector, args['cbook'], output)
+    dataset, data_label = preprocessing_images(detector, args['cbook'], image_dir)
+    serialize_object((dataset, data_label), output)
     print 'Elapsed time: %s sec' % (time.time() - start)
 

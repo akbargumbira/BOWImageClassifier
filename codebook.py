@@ -33,8 +33,8 @@ def build_codebook(input_dir, output_path, alg='sift', vocab_size=240):
     pickle.dump(codewords, codebook_file)
 
 
-def load_codebook(filename):
-    codebook_path = os.path.join(os.curdir, 'model', filename)
+def load_codebook(file_path):
+    codebook_path = os.path.join(os.curdir, file_path)
     codebook_file = open(codebook_path, 'rb')
     codewords = pickle.load(codebook_file)
     return codewords
@@ -59,7 +59,7 @@ if __name__ == '__main__':
         sys.exit()
 
     # Output path
-    output = os.path.join(os.curdir, 'model', args['output'])
+    output = os.path.join(os.curdir, args['output'])
 
     # Algorithm
     alg = None

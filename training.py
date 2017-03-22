@@ -61,14 +61,14 @@ if __name__ == '__main__':
         test_size = float(args['testsize'])
 
     # Load dataset
-    dataset_path = os.path.join(os.curdir, 'model', args['data'])
+    dataset_path = os.path.join(os.curdir, args['data'])
     if not os.path.exists(dataset_path):
         print 'Dataset: %s under model dir does not exist.' % dataset_path
         sys.exit()
     dataset, data_label = load_dataset(dataset_path)
 
     # Output trained model file
-    output = os.path.join(os.curdir, 'model', args['output'])
+    output = os.path.join(os.curdir, args['output'])
 
     # Do the training
     print 'Training the model....'
