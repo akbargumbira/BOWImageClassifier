@@ -41,7 +41,7 @@ def preprocessing_images(feature_detector, codebook_filename, image_dir):
         path = os.path.join(os.curdir, image_dir, group_dir)
         files = os.listdir(path)
         for file in files:
-            if file.endswith('.jpg'):
+            if file.lower().endswith('.jpg'):
                 image_path = os.path.join(path, file)
                 image = cv2.imread(image_path)
                 descriptor = preprocess_image(

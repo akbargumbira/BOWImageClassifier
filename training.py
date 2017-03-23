@@ -18,13 +18,44 @@ def train_model(alg, dataset, data_label, test_size=0):
     classifier = None
     if alg.lower() == 'svm':
         classifier = cv2.ml.SVM_create()
+        classifier.setKernel(cv2.ml.SVM_RBF)
+        classifier.setType(cv2.ml.SVM_C_SVC)
+        classifier.setGamma(15.383)
+        classifier.setC(50)
+    elif alg.lower() == 'ann':
+        classifier = cv2.ml.ANN_MLP_create()
+        classifier.setLayerSizes(np.array([240, 300, 8], dtype=np.uint8))
+        classifier.setTrainMethod(cv2.ml.ANN_MLP_BACKPROP)
+    elif alg.lower() == 'knn':
+        classifier = cv2.ml.KNearest_create()
 
-    classifier.train(
-        np.array(train_data), cv2.ml.ROW_SAMPLE, np.array(train_label))
+    # Training
+    if alg.lower() == 'ann':
+        ann_labels = []
+        for label in train_label:
+            ann_label = []
+            for i in range(8):
+                if i+1 == label:
+                    ann_label.append(1)
+                else:
+                    ann_label.append(0)
+            ann_labels.append(ann_label)
 
+        classifier.train(
+            np.array(train_data), cv2.ml.ROW_SAMPLE, np.array(ann_labels))
+    else:
+        classifier.train(
+            np.array(train_data), cv2.ml.ROW_SAMPLE, np.array(train_label))
+
+    # Get model accuracy
     if test_size != 0:
-        test_predicts = classifier.predict(np.array(test_data))
-        test_predicts = test_predicts[1].astype(int).flatten().tolist()
+        if alg.lower() == 'knn':
+            retval, test_predicts, neigh_resp, dists = classifier.findNearest(
+                np.array(test_data), 11)
+            test_predicts = test_predicts.astype(int).flatten().tolist()
+        else:
+            test_predicts = classifier.predict(np.array(test_data))
+            test_predicts = test_predicts[1].astype(int).flatten().tolist()
         print 'Model Accuracy: %s' % accuracy_score(test_label, test_predicts)
         print 'Confusion Matrix: '
         print confusion_matrix(test_label, test_predicts)
@@ -51,7 +82,7 @@ if __name__ == '__main__':
 
     # Classification algorithm
     alg = args['alg'].lower()
-    if alg != 'svm' and alg != 'ann':
+    if alg != 'svm' and alg != 'ann' and alg != 'knn':
         print 'Wrong -a args. Must be svm or ann.'
         sys.exit()
 

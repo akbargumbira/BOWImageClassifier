@@ -21,7 +21,7 @@ def build_codebook(input_dir, output_path, alg='sift', vocab_size=240):
     # Read images
     path = os.path.join(os.curdir, input_dir)
     for root, dirnames, filenames in os.walk(path):
-        for filename in fnmatch.filter(filenames, '*.jpg'):
+        for filename in fnmatch.filter(filenames, '*.[Jj][Pp][Gg]'):
             image_path = os.path.join(root, filename)
             image = cv2.imread(image_path)
             gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
