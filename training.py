@@ -7,16 +7,24 @@ import time
 from sklearn.cross_validation import train_test_split
 from sklearn.metrics import accuracy_score, confusion_matrix
 from sklearn import preprocessing
+from sklearn.model_selection import StratifiedShuffleSplit
 import numpy as np
 from preprocess import load_dataset
 
 
 def train_model(alg, dataset, data_label, test_size=0):
-    # Split the dataset into training and test set
-    train_data, test_data, train_label, test_label = train_test_split(
-        dataset, data_label, test_size=test_size)
     n_class = np.unique(data_label).size
     n_feature = dataset[0].shape[0]
+
+    # Split the dataset into training and test set
+    splitter = StratifiedShuffleSplit(
+        n_splits=1, test_size=test_size)
+    train_index, test_index = splitter.split(dataset, data_label).next()
+    train_data, test_data = np.array(dataset)[train_index], np.array(dataset)[test_index]
+    train_label, test_label = np.array(data_label)[train_index], \
+                              np.array(data_label)[test_index]
+    # train_data, test_data, train_label, test_label = train_test_split(
+    #     dataset, data_label, test_size=test_size)
 
     train_data = np.array(train_data, dtype=np.float32)
     test_data = np.array(test_data, dtype=np.float32)
