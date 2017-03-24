@@ -6,6 +6,7 @@ import sys
 import time
 from sklearn.cross_validation import train_test_split
 from sklearn.metrics import accuracy_score, confusion_matrix
+from sklearn import preprocessing
 import numpy as np
 from preprocess import load_dataset
 
@@ -14,6 +15,15 @@ def train_model(alg, dataset, data_label, test_size=0):
     # Split the dataset into training and test set
     train_data, test_data, train_label, test_label = train_test_split(
         dataset, data_label, test_size=test_size)
+    n_class = np.unique(data_label).size
+    n_feature = dataset[0].shape[0]
+
+    train_data = np.array(train_data, dtype=np.float32)
+    test_data = np.array(test_data, dtype=np.float32)
+    # # Scale training data
+    # scaler = preprocessing.StandardScaler().fit(train_data)
+    # train_data = scaler.transform(train_data)
+    # test_data = scaler.transform(test_data)
 
     classifier = None
     if alg.lower() == 'svm':
@@ -24,10 +34,14 @@ def train_model(alg, dataset, data_label, test_size=0):
         classifier.setC(50)
     elif alg.lower() == 'ann':
         classifier = cv2.ml.ANN_MLP_create()
-        classifier.setLayerSizes(np.array([240, 70, 30, 8], dtype=np.uint8))
+        classifier.setLayerSizes(
+            np.array([n_feature, n_feature/2, n_class], dtype=np.uint8))
         classifier.setActivationFunction(cv2.ml.ANN_MLP_SIGMOID_SYM)
         classifier.setTrainMethod(cv2.ml.ANN_MLP_BACKPROP)
-        classifier.setTermCriteria((cv2.TERM_CRITERIA_COUNT, 100, 0.0001))
+        classifier.setBackpropWeightScale(0.01)
+        classifier.setBackpropMomentumScale(0.8)
+        classifier.setTermCriteria(
+            (cv2.TERM_CRITERIA_COUNT | cv2.TERM_CRITERIA_EPS, 200, 0.00001))
     elif alg.lower() == 'knn':
         classifier = cv2.ml.KNearest_create()
 
@@ -36,7 +50,7 @@ def train_model(alg, dataset, data_label, test_size=0):
         ann_labels = []
         for label in train_label:
             ann_label = []
-            for i in range(8):
+            for i in range(n_class):
                 if i+1 == label:
                     ann_label.append(1)
                 else:
@@ -44,27 +58,29 @@ def train_model(alg, dataset, data_label, test_size=0):
             ann_labels.append(ann_label)
 
         classifier.train(
-            np.array(train_data, dtype=np.float32),
+            train_data,
             cv2.ml.ROW_SAMPLE,
             np.array(ann_labels, dtype=np.float32)
         )
+    elif alg.lower() == 'svm':
+        classifier.train(
+            train_data, cv2.ml.ROW_SAMPLE, np.array(train_label))
     else:
         classifier.train(
-            np.array(train_data), cv2.ml.ROW_SAMPLE, np.array(train_label))
+            train_data, cv2.ml.ROW_SAMPLE, np.array(train_label))
 
     # Get model accuracy
     if test_size != 0:
         if alg.lower() == 'knn':
             retval, test_predicts, neigh_resp, dists = classifier.findNearest(
-                np.array(test_data), 11)
+                test_data, 11)
             test_predicts = test_predicts.astype(int).flatten().tolist()
         elif alg.lower() == 'ann':
-            ret, resp = classifier.predict(
-                np.array(test_data, dtype=np.float32))
+            ret, resp = classifier.predict(test_data)
             test_predicts = resp.argmax(-1) + 1
             test_predicts = test_predicts.astype(int).flatten().tolist()
         else:
-            test_predicts = classifier.predict(np.array(test_data))
+            test_predicts = classifier.predict(test_data)
             test_predicts = test_predicts[1].astype(int).flatten().tolist()
         print 'Model Accuracy: %s' % accuracy_score(test_label, test_predicts)
         print 'Confusion Matrix: '
