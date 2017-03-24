@@ -24,8 +24,10 @@ def train_model(alg, dataset, data_label, test_size=0):
         classifier.setC(50)
     elif alg.lower() == 'ann':
         classifier = cv2.ml.ANN_MLP_create()
-        classifier.setLayerSizes(np.array([240, 300, 8], dtype=np.uint8))
+        classifier.setLayerSizes(np.array([240, 70, 30, 8], dtype=np.uint8))
+        classifier.setActivationFunction(cv2.ml.ANN_MLP_SIGMOID_SYM)
         classifier.setTrainMethod(cv2.ml.ANN_MLP_BACKPROP)
+        classifier.setTermCriteria((cv2.TERM_CRITERIA_COUNT, 100, 0.0001))
     elif alg.lower() == 'knn':
         classifier = cv2.ml.KNearest_create()
 
@@ -42,7 +44,10 @@ def train_model(alg, dataset, data_label, test_size=0):
             ann_labels.append(ann_label)
 
         classifier.train(
-            np.array(train_data), cv2.ml.ROW_SAMPLE, np.array(ann_labels))
+            np.array(train_data, dtype=np.float32),
+            cv2.ml.ROW_SAMPLE,
+            np.array(ann_labels, dtype=np.float32)
+        )
     else:
         classifier.train(
             np.array(train_data), cv2.ml.ROW_SAMPLE, np.array(train_label))
@@ -52,6 +57,11 @@ def train_model(alg, dataset, data_label, test_size=0):
         if alg.lower() == 'knn':
             retval, test_predicts, neigh_resp, dists = classifier.findNearest(
                 np.array(test_data), 11)
+            test_predicts = test_predicts.astype(int).flatten().tolist()
+        elif alg.lower() == 'ann':
+            ret, resp = classifier.predict(
+                np.array(test_data, dtype=np.float32))
+            test_predicts = resp.argmax(-1) + 1
             test_predicts = test_predicts.astype(int).flatten().tolist()
         else:
             test_predicts = classifier.predict(np.array(test_data))
