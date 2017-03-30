@@ -4,10 +4,9 @@ import cv2
 import argparse
 import sys
 import time
-from sklearn.cross_validation import train_test_split
 from sklearn.metrics import accuracy_score, confusion_matrix
-from sklearn import preprocessing
 from sklearn.model_selection import StratifiedShuffleSplit
+from nolearn.dbn import DBN
 import numpy as np
 from preprocess import load_dataset
 
@@ -17,12 +16,10 @@ def train_model(alg, dataset, data_label, test_size=0):
     n_feature = dataset[0].shape[0]
 
     # Split the dataset into training and test set
-    splitter = StratifiedShuffleSplit(
-        n_splits=1, test_size=test_size)
+    splitter = StratifiedShuffleSplit(n_splits=1, test_size=test_size)
     train_index, test_index = splitter.split(dataset, data_label).next()
     train_data, test_data = np.array(dataset)[train_index], np.array(dataset)[test_index]
-    train_label, test_label = np.array(data_label)[train_index], \
-                              np.array(data_label)[test_index]
+    train_label, test_label = np.array(data_label)[train_index], np.array(data_label)[test_index]
     # train_data, test_data, train_label, test_label = train_test_split(
     #     dataset, data_label, test_size=test_size)
 
@@ -40,6 +37,9 @@ def train_model(alg, dataset, data_label, test_size=0):
         classifier.setType(cv2.ml.SVM_C_SVC)
         classifier.setGamma(15.383)
         classifier.setC(50)
+        # Training
+        classifier.train(
+            train_data, cv2.ml.ROW_SAMPLE, np.array(train_label))
     elif alg.lower() == 'ann':
         classifier = cv2.ml.ANN_MLP_create()
         classifier.setLayerSizes(
@@ -50,16 +50,12 @@ def train_model(alg, dataset, data_label, test_size=0):
         classifier.setBackpropMomentumScale(0.8)
         classifier.setTermCriteria(
             (cv2.TERM_CRITERIA_COUNT | cv2.TERM_CRITERIA_EPS, 200, 0.00001))
-    elif alg.lower() == 'knn':
-        classifier = cv2.ml.KNearest_create()
-
-    # Training
-    if alg.lower() == 'ann':
+        # Training
         ann_labels = []
         for label in train_label:
             ann_label = []
             for i in range(n_class):
-                if i+1 == label:
+                if i + 1 == label:
                     ann_label.append(1)
                 else:
                     ann_label.append(0)
@@ -70,12 +66,19 @@ def train_model(alg, dataset, data_label, test_size=0):
             cv2.ml.ROW_SAMPLE,
             np.array(ann_labels, dtype=np.float32)
         )
-    elif alg.lower() == 'svm':
+    elif alg.lower() == 'knn':
+        classifier = cv2.ml.KNearest_create()
+        # Training
         classifier.train(
             train_data, cv2.ml.ROW_SAMPLE, np.array(train_label))
-    else:
-        classifier.train(
-            train_data, cv2.ml.ROW_SAMPLE, np.array(train_label))
+    elif alg.lower() == 'dbn':
+        classifier = DBN(
+            [n_feature, n_feature, n_class],
+            learn_rates=0.001,
+            epochs=10,
+            verbose=1,
+        )
+        classifier.fit(train_data, train_label.astype('int0'))
 
     # Get model accuracy
     if test_size != 0:
@@ -87,6 +90,8 @@ def train_model(alg, dataset, data_label, test_size=0):
             ret, resp = classifier.predict(test_data)
             test_predicts = resp.argmax(-1) + 1
             test_predicts = test_predicts.astype(int).flatten().tolist()
+        elif alg.lower() == 'dbn':
+            test_predicts = classifier.predict(test_data)
         else:
             test_predicts = classifier.predict(test_data)
             test_predicts = test_predicts[1].astype(int).flatten().tolist()
@@ -116,7 +121,7 @@ if __name__ == '__main__':
 
     # Classification algorithm
     alg = args['alg'].lower()
-    if alg != 'svm' and alg != 'ann' and alg != 'knn':
+    if alg != 'svm' and alg != 'ann' and alg != 'knn' and alg != 'dbn':
         print 'Wrong -a args. Must be svm or ann.'
         sys.exit()
 

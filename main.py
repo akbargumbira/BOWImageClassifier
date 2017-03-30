@@ -38,5 +38,5 @@ from preprocess import load_dataset
 
 dataset_path = os.path.join(os.curdir, 'model/training_data_kaze_240.dat')
 dataset, data_label = load_dataset(dataset_path)
-model = train_model("ann", dataset, data_label, 0.1)
+model = train_model("dbn", dataset, data_label, 0.1)
 print 'tes'
