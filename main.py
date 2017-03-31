@@ -36,7 +36,7 @@ from preprocess import load_dataset
 #         des = bow_extract.compute(gray, keypoints)
 #         print 'Class for %s: %s' % (test_file, svm.predict(des))
 
-dataset_path = os.path.join(os.curdir, 'model/training_data_kaze_240.dat')
+dataset_path = os.path.join(os.curdir, 'model/training_data_sift_240.dat')
 dataset, data_label = load_dataset(dataset_path)
 model = train_model("dbn", dataset, data_label, 0.1)
 print 'tes'

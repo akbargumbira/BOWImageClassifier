@@ -7,6 +7,10 @@ import time
 from sklearn.metrics import accuracy_score, confusion_matrix
 from sklearn.model_selection import StratifiedShuffleSplit
 from nolearn.dbn import DBN
+import keras
+from keras.models import Sequential
+from keras.layers import Dense, Dropout
+
 import numpy as np
 from preprocess import load_dataset
 
@@ -20,15 +24,6 @@ def train_model(alg, dataset, data_label, test_size=0):
     train_index, test_index = splitter.split(dataset, data_label).next()
     train_data, test_data = np.array(dataset)[train_index], np.array(dataset)[test_index]
     train_label, test_label = np.array(data_label)[train_index], np.array(data_label)[test_index]
-    # train_data, test_data, train_label, test_label = train_test_split(
-    #     dataset, data_label, test_size=test_size)
-
-    train_data = np.array(train_data, dtype=np.float32)
-    test_data = np.array(test_data, dtype=np.float32)
-    # # Scale training data
-    # scaler = preprocessing.StandardScaler().fit(train_data)
-    # train_data = scaler.transform(train_data)
-    # test_data = scaler.transform(test_data)
 
     classifier = None
     if alg.lower() == 'svm':
@@ -73,33 +68,63 @@ def train_model(alg, dataset, data_label, test_size=0):
             train_data, cv2.ml.ROW_SAMPLE, np.array(train_label))
     elif alg.lower() == 'dbn':
         classifier = DBN(
-            [n_feature, n_feature, n_class],
-            learn_rates=0.001,
-            epochs=10,
+            [n_feature, n_feature/2, n_class],
+            learn_rates=0.1,
+            minibatch_size=32,
+            learn_rates_pretrain=0.05,
+            epochs=150,
             verbose=1,
+
         )
         classifier.fit(train_data, train_label.astype('int0'))
+    elif alg.lower() == 'keras':
+        classifier = Sequential()
+        classifier.add(Dense(n_feature, input_dim=n_feature,
+                             activation='relu'))
+        classifier.add(Dense(n_feature, activation='relu'))
+        classifier.add(Dense(n_feature/2, activation='relu'))
+        classifier.add(Dense(n_feature/4, activation='relu'))
+        classifier.add(Dense(n_class, activation='softmax'))
+        classifier.compile(loss='categorical_crossentropy',
+                           optimizer='rmsprop',
+                           metrics=['accuracy'])
+        binary_labels = keras.utils.to_categorical(train_label-1,
+                                                   num_classes=n_class)
+        test_binary_labels = keras.utils.to_categorical(test_label-1,
+                                                   num_classes=n_class)
+        classifier.fit(train_data, binary_labels, epochs=100)
 
-    # Get model accuracy
+    # Get model accuracy on training
+    get_metrics(classifier, alg, train_data, train_label, n_class)
+
+    # Get model accuracy on test
     if test_size != 0:
-        if alg.lower() == 'knn':
-            retval, test_predicts, neigh_resp, dists = classifier.findNearest(
-                test_data, 11)
-            test_predicts = test_predicts.astype(int).flatten().tolist()
-        elif alg.lower() == 'ann':
-            ret, resp = classifier.predict(test_data)
-            test_predicts = resp.argmax(-1) + 1
-            test_predicts = test_predicts.astype(int).flatten().tolist()
-        elif alg.lower() == 'dbn':
-            test_predicts = classifier.predict(test_data)
-        else:
-            test_predicts = classifier.predict(test_data)
-            test_predicts = test_predicts[1].astype(int).flatten().tolist()
-        print 'Model Accuracy: %s' % accuracy_score(test_label, test_predicts)
-        print 'Confusion Matrix: '
-        print confusion_matrix(test_label, test_predicts)
+        get_metrics(classifier, alg, test_data, test_label, n_class)
 
     return classifier
+
+
+def get_metrics(model, alg, data, label, n_class):
+    if alg.lower() == 'knn':
+        retval, test_predicts, neigh_resp, dists = model.findNearest(
+            data, 11)
+        test_predicts = test_predicts.astype(int).flatten().tolist()
+    elif alg.lower() == 'ann':
+        ret, resp = model.predict(data)
+        test_predicts = resp.argmax(-1) + 1
+        test_predicts = test_predicts.astype(int).flatten().tolist()
+    elif alg.lower() == 'dbn':
+        test_predicts = model.predict(data)
+    elif alg.lower() == 'keras':
+        test_predicts = model.predict(data)
+        test_predicts = test_predicts.argmax(-1) + 1
+        test_predicts = test_predicts.astype(int).flatten().tolist()
+    else:
+        test_predicts = model.predict(data)
+        test_predicts = test_predicts[1].astype(int).flatten().tolist()
+    print 'Model Accuracy: %s' % accuracy_score(label, test_predicts)
+    print 'Confusion Matrix: '
+    print confusion_matrix(label, test_predicts)
 
 
 if __name__ == '__main__':
@@ -121,9 +146,9 @@ if __name__ == '__main__':
 
     # Classification algorithm
     alg = args['alg'].lower()
-    if alg != 'svm' and alg != 'ann' and alg != 'knn' and alg != 'dbn':
-        print 'Wrong -a args. Must be svm or ann.'
-        sys.exit()
+    # if alg != 'svm' and alg != 'ann' and alg != 'knn' and alg != 'dbn':
+    #     print 'Wrong -a args. Must be svm or ann.'
+    #     sys.exit()
 
     # Test size
     test_size = 0
