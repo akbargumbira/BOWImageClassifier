@@ -62,9 +62,16 @@ def build_codebook(
 
 
 def load_codebook(file_path):
-    codebook_path = os.path.join(os.curdir, file_path)
-    codebook_file = open(codebook_path, 'rb')
-    codewords = pickle.load(codebook_file)
+    """Load the codebook from a file.
+
+    :param file_path: The codebook path.
+    :type: str
+
+    :return: The codebook object.
+    :rtype: object
+    """
+    with open(file_path, 'rb') as codebook_file:
+        codewords = pickle.load(codebook_file)
     return codewords
 
 
