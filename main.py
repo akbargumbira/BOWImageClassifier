@@ -3,7 +3,7 @@ import numpy as np
 import cv2
 from sklearn.cross_validation import train_test_split
 from sklearn.metrics import classification_report
-from codebook import load_codebook
+from codebook import load_codebook, build_codebook
 from training import train_model
 from preprocess import load_dataset
 
@@ -36,7 +36,19 @@ from preprocess import load_dataset
 #         des = bow_extract.compute(gray, keypoints)
 #         print 'Class for %s: %s' % (test_file, svm.predict(des))
 
-dataset_path = os.path.join(os.curdir, 'model/training_data_sift_240.dat')
-dataset, data_label = load_dataset(dataset_path)
-model = train_model("dbn", dataset, data_label, 0.1)
+# dataset_path = os.path.join(os.curdir, 'model/training_data_sift_240.dat')
+# dataset, data_label = load_dataset(dataset_path)
+# model = train_model("dbn", dataset, data_label, 0.1)
+# print 'tes'
+
+# DOG vs CAT - KAGGLE
+# 1. Building the codebook from all the training images using kaze with 200
+#   clusters
+build_codebook(
+    '/home/agumbira/dev/data/dog_cat_kaggle/train',
+    '/home/agumbira/dev/python/BOWImageClassifier/model/dog_cat_kaggle',
+    'kaze',
+    200,
+    verbose=True)
+
 print 'tes'

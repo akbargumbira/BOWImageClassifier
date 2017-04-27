@@ -3,9 +3,9 @@ Image classification using Bag of Words concept
 
 
 ## Building Codebook
-python codebook.py -i [images_dir] -o [output_file] -a [sift|kaze] -s [vocab_size]
+python codebook.py -i [images_dir] -o [output_file] -a [sift|kaze] -s [vocab_size] --verbose(optional)
 
-python codebook.py -i images/training -o model/codebook_kaze_10.pkl -a kaze -s 10
+python codebook.py -i /home/agumbira/dev/data/dog_cat_kaggle/train -o /home/agumbira/dev/python/BOWImageClassifier/model/dog_cat_kaggle/codebook_kaze_200.pkl -a kaze -s 200 --verbose 
 
 ## Preprocessing Images
 python preprocess.py  -a [sift|kaze] -i [root_image_dir] -c [codebook_file] -o [output_file]

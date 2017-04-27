@@ -8,7 +8,25 @@ import argparse
 import cv2
 
 
-def build_codebook(input_dir, output_path, alg='sift', vocab_size=240):
+def build_codebook(
+        input_dir, output_path, alg='sift', vocab_size=240, verbose=False):
+    """Build the codebook (dictionary) for all the images in input dir.
+
+    :param input_dir: The input directory containing all the images.
+    :type input_dir: str
+
+    :param output_path: The codebook output path.
+    :type output_path: str
+
+    :param alg: The feature detection & description algorithm (SIFT/KAZE).
+    :type alg: str
+
+    :param vocab_size: The vocabulary size (the number of clusters).
+    :type vocab_size: int
+
+    :param verbose: Show the status every 1% of total images.
+    :type verbose: bool
+    """
     if alg.lower() == 'sift':
         detector = cv2.xfeatures2d.SIFT_create()
     elif alg.lower() == 'kaze':
@@ -19,15 +37,25 @@ def build_codebook(input_dir, output_path, alg='sift', vocab_size=240):
 
     bow = cv2.BOWKMeansTrainer(vocab_size)
     # Read images
-    path = os.path.join(os.curdir, input_dir)
-    for root, dirnames, filenames in os.walk(path):
-        for filename in fnmatch.filter(filenames, '*.[Jj][Pp][Gg]'):
+    for root, dirnames, filenames in os.walk(input_dir):
+        if verbose:
+            print 'Extracting descriptors of images in: %s ...' % root
+        n_images = len(filenames)
+        filenames = fnmatch.filter(filenames, '*.[Jj][Pp][Gg]')
+        for index, filename in enumerate(filenames):
+            n_chunk = int(round(float(n_images) / 100))
+            if index % n_chunk == 0 and verbose:
+                print 'Processed: %s %% of images' % (index*100/n_images)
+            # Get the descriptors
             image_path = os.path.join(root, filename)
             image = cv2.imread(image_path)
             gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
             keypoints, descriptors = detector.detectAndCompute(gray, None)
             bow.add(descriptors)
 
+    # Cluster all the descriptors and save it into output file
+    if verbose:
+        print 'Clustering all the descriptors...'
     codewords = bow.cluster()
     codebook_file = open(output_path, 'wb')
     pickle.dump(codewords, codebook_file)
@@ -50,16 +78,18 @@ if __name__ == '__main__':
         '-a', '--alg', help='Descriptors algorithm', required=True)
     parser.add_argument(
         '-s', '--size', help='Codebook size (default=240)', required=False)
+    parser.add_argument('--verbose', dest='verbose', action='store_true')
+    parser.set_defaults(verbose=False)
     args = vars(parser.parse_args())
 
     # Input directory
-    input_dir = os.path.join(os.curdir, args['input'])
+    input_dir = args['input']
     if not os.path.exists(input_dir):
         print 'Input directory: %s does not exist.' % input_dir
         sys.exit()
 
     # Output path
-    output = os.path.join(os.curdir, args['output'])
+    output = args['output']
 
     # Algorithm
     alg = None
@@ -78,5 +108,5 @@ if __name__ == '__main__':
 
     print 'Building the codebook...'
     start = time.time()
-    build_codebook(input_dir, output, alg, vocab_size)
+    build_codebook(input_dir, output, alg, vocab_size, args['verbose'])
     print 'Elapsed time: %s sec' % (time.time() - start)
