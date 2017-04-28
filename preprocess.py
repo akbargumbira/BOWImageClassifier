@@ -84,16 +84,18 @@ def get_cat_dog_data(feature_detector, codebook_path, image_dir):
     for root, dirnames, filenames in os.walk(image_dir):
         filenames = fnmatch.filter(filenames, '*.[Jj][Pp][Gg]')
         for index, filename in enumerate(filenames):
-            id.append(filename)
             image_path = os.path.join(root, filename)
-            image = cv2.imread(image_path)
-            histogram = get_histogram(
-                feature_detector, bow_extractor, image)
-            training_data.extend(histogram)
-            if 'dog' in filename.lower():
-                training_labels.append(1)
-            else:
-                training_labels.append(0)
+            if os.path.exists(image_path):
+                image = cv2.imread(image_path)
+                histogram = get_histogram(
+                    feature_detector, bow_extractor, image)
+                if histogram is not None:
+                    id.append(filename)
+                    training_data.extend(histogram)
+                    if 'dog' in filename.lower():
+                        training_labels.append(1)
+                    else:
+                        training_labels.append(0)
 
     return id, training_data, training_labels
 

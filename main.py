@@ -55,17 +55,17 @@ import keras.backend as K
 
 # 2 Preprocessing all the images into dataset using defined codebook
 detector = cv2.KAZE_create()
-codebook_path = '/home/akbar/dev/python/BOWImageClassifier/model/dog_cat_kaggle/codebook_kaze_test_200.pkl'
+# codebook_path = '/home/akbar/dev/python/BOWImageClassifier/model/dog_cat_kaggle/codebook_kaze_test_200.pkl'
+# codebook_path = '/home/agumbira/dev/python/BOWImageClassifier/model/dog_cat_kaggle/codebook_kaze_200.pkl'
 # test_dir = '/home/akbar/dev/data/dog_cat_kaggle/test/'
-test_dir1 = '/home/akbar/dev/data/dog_cat_kaggle/test_1/'
+# test_dir1 = '/home/akbar/dev/data/dog_cat_kaggle/test_1/'
+test_dir1 = '/home/agumbira/dev/data/dog_cat_kaggle/test_1/'
 test_dir2 = '/home/akbar/dev/data/dog_cat_kaggle/test_2/'
-# train_data, train_label = get_cat_dog_training_data(
-#     detector,
-#     '/home/akbar/dev/python/BOWImageClassifier/model/dog_cat_kaggle/codebook_kaze_test_200.pkl',
-#     '/home/akbar/dev/data/dog_cat_kaggle/test_1/',
-# )
-dataset_path = '/home/akbar/dev/python/BOWImageClassifier/model/dog_cat_kaggle/training_data_kaze_200.dat'
-model_output = '/home/akbar/dev/python/BOWImageClassifier/model/dog_cat_kaggle/cnn_kaze.h5'
+
+# dataset_path = '/home/akbar/dev/python/BOWImageClassifier/model/dog_cat_kaggle/training_data_kaze_test_200.dat'
+dataset_path = '/home/agumbira/dev/python/BOWImageClassifier/model/dog_cat_kaggle/training_data_kaze_200.dat'
+# model_output = '/home/akbar/dev/python/BOWImageClassifier/model/dog_cat_kaggle/cnn_kaze.h5'
+model_output = '/home/agumbira/dev/python/BOWImageClassifier/model/dog_cat_kaggle/ann_kaze.h5'
 dataset, data_label = load_dataset(dataset_path)
 model = train_dog_cat_kaggle(dataset, data_label, 0.1)
 model.save(model_output)

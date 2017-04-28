@@ -12,9 +12,9 @@ from keras.models import load_model
 
 class DogCatClassifier(object):
     """Class DigitNotDigit."""
-    def __init__(self, ):
+    def __init__(self, model_path):
         """The constructor."""
-        self._model = load_model('model/dog_cat_kaggle/cnn_kaze.h5')
+        self._model = load_model(model_path)
 
     def predict(self, data):
         predictions = self._model.predict(data)

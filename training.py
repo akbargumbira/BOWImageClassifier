@@ -18,7 +18,7 @@ from preprocess import load_dataset
 
 
 def train_dog_cat_kaggle(dataset, data_label, test_size=0):
-    batch_size = 32
+    batch_size = 1024
     img_rows, img_cols = 200, 1
     input_shape = (1, img_rows, img_cols) if K.image_data_format() == 'channels_first' else (img_rows, img_cols, 1)
     n_class = np.unique(data_label).size
@@ -32,33 +32,52 @@ def train_dog_cat_kaggle(dataset, data_label, test_size=0):
     train_label, test_label = np.array(data_label)[train_index], \
                               np.array(data_label)[test_index]
 
-    if K.image_data_format() == 'channels_first':
-        train_data = train_data.reshape(train_data.shape[0], 1, img_rows, img_cols)
-        test_data = test_data.reshape(test_data.shape[0], 1, img_rows, img_cols)
-    else:
-        train_data = train_data.reshape(train_data.shape[0], img_rows, img_cols, 1)
-        test_data = test_data.reshape(test_data.shape[0], img_rows, img_cols, 1)
-
     train_label = to_categorical(train_label, n_class)
     test_label = to_categorical(test_label, n_class)
 
+    # Using CNN
+    # if K.image_data_format() == 'channels_first':
+    #     train_data = train_data.reshape(train_data.shape[0], 1, img_rows, img_cols)
+    #     test_data = test_data.reshape(test_data.shape[0], 1, img_rows, img_cols)
+    # else:
+    #     train_data = train_data.reshape(train_data.shape[0], img_rows, img_cols, 1)
+    #     test_data = test_data.reshape(test_data.shape[0], img_rows, img_cols, 1)
+
+    # model = Sequential()
+    # model.add(
+    #     Conv2D(32, kernel_size=(3, 1), activation='relu',
+    #            input_shape=input_shape))
+    # model.add(Conv2D(64, (3, 1), activation='relu'))
+    # model.add(MaxPooling2D(pool_size=(2, 1)))
+    # model.add(Dropout(0.25))
+    # model.add(Flatten())
+    # model.add(Dense(256, activation='relu'))
+    # model.add(Dropout(0.5))
+    # model.add(Dense(n_class, activation='softmax'))
+    # model.compile(loss=keras.losses.categorical_crossentropy,
+    #               optimizer=keras.optimizers.Adadelta(),
+    #               metrics=['accuracy'])
+    # model.fit(train_data, train_label,
+    #           batch_size=batch_size,
+    #           epochs=50,
+    #           verbose=1,
+    #           validation_data=(test_data, test_label))
+
     model = Sequential()
-    model.add(
-        Conv2D(16, kernel_size=(3, 1), activation='relu',
-               input_shape=input_shape))
-    model.add(Conv2D(32, (3, 1), activation='relu'))
-    model.add(MaxPooling2D(pool_size=(2, 1)))
+    model.add(Dense(n_feature, input_dim=n_feature, activation='sigmoid'))
     model.add(Dropout(0.25))
-    model.add(Flatten())
-    model.add(Dense(64, activation='relu'))
+    model.add(Dense(n_feature * 2, input_dim=n_feature, activation='sigmoid'))
     model.add(Dropout(0.5))
+    model.add(Dense(n_feature / 2, activation='sigmoid'))
+    model.add(Dropout(0.25))
+    model.add(Dense(n_feature / 4, activation='sigmoid'))
     model.add(Dense(n_class, activation='softmax'))
-    model.compile(loss=keras.losses.categorical_crossentropy,
-                  optimizer=keras.optimizers.Adadelta(),
-                  metrics=['accuracy'])
+    model.compile(loss='categorical_crossentropy',
+                       optimizer='rmsprop',
+                       metrics=['accuracy'])
     model.fit(train_data, train_label,
               batch_size=batch_size,
-              epochs=400,
+              epochs=500,
               verbose=1,
               validation_data=(test_data, test_label))
 
