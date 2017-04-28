@@ -4,8 +4,10 @@ import cv2
 from sklearn.cross_validation import train_test_split
 from sklearn.metrics import classification_report
 from codebook import load_codebook, build_codebook
-from training import train_model
-from preprocess import load_dataset
+from training import train_model, train_dog_cat_kaggle
+from preprocess import load_dataset, get_cat_dog_data
+from classify import DogCatClassifier
+import keras.backend as K
 
 #
 # sift_detector = cv2.xfeatures2d.SIFT_create()
@@ -44,11 +46,46 @@ from preprocess import load_dataset
 # DOG vs CAT - KAGGLE
 # 1. Building the codebook from all the training images using kaze with 200
 #   clusters
-build_codebook(
-    '/home/agumbira/dev/data/dog_cat_kaggle/train',
-    '/home/agumbira/dev/python/BOWImageClassifier/model/dog_cat_kaggle',
-    'kaze',
-    200,
-    verbose=True)
+# build_codebook(
+#     '/home/agumbira/dev/data/dog_cat_kaggle/train',
+#     '/home/agumbira/dev/python/BOWImageClassifier/model/dog_cat_kaggle',
+#     'kaze',
+#     200,
+#     verbose=True)
+
+# 2 Preprocessing all the images into dataset using defined codebook
+detector = cv2.KAZE_create()
+codebook_path = '/home/akbar/dev/python/BOWImageClassifier/model/dog_cat_kaggle/codebook_kaze_test_200.pkl'
+# test_dir = '/home/akbar/dev/data/dog_cat_kaggle/test/'
+test_dir1 = '/home/akbar/dev/data/dog_cat_kaggle/test_1/'
+test_dir2 = '/home/akbar/dev/data/dog_cat_kaggle/test_2/'
+# train_data, train_label = get_cat_dog_training_data(
+#     detector,
+#     '/home/akbar/dev/python/BOWImageClassifier/model/dog_cat_kaggle/codebook_kaze_test_200.pkl',
+#     '/home/akbar/dev/data/dog_cat_kaggle/test_1/',
+# )
+dataset_path = '/home/akbar/dev/python/BOWImageClassifier/model/dog_cat_kaggle/training_data_kaze_200.dat'
+model_output = '/home/akbar/dev/python/BOWImageClassifier/model/dog_cat_kaggle/cnn_kaze.h5'
+dataset, data_label = load_dataset(dataset_path)
+model = train_dog_cat_kaggle(dataset, data_label, 0.1)
+model.save(model_output)
+# img_rows, img_cols = 20, 10
+# id, data, label = get_cat_dog_data(detector, codebook_path, test_dir)
+# id1, data1, label1 = get_cat_dog_data(detector, codebook_path, test_dir1)
+# id2, data2, label2 = get_cat_dog_data(detector, codebook_path, test_dir2)
+# data, data1, data2 = np.array(data), np.array(data1), np.array(data2)
+# if K.image_data_format() == 'channels_first':
+#     data = data.reshape(data.shape[0], 1, img_rows, img_cols)
+#     data1 = data1.reshape(data1.shape[0], 1, img_rows, img_cols)
+#     data2 = data2.reshape(data2.shape[0], 1, img_rows, img_cols)
+# else:
+#     data = data.reshape(data.shape[0], img_rows, img_cols, 1)
+#     data1 = data2.reshape(data2.shape[0], img_rows, img_cols, 1)
+#     data2 = data2.reshape(data2.shape[0], img_rows, img_cols, 1)
+#
+# classifier = DogCatClassifier()
+# pred_label = classifier.predict(data)
+# pred_label2 = classifier.predict(data2)
 
 print 'tes'
+

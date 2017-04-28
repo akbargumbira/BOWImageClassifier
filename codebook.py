@@ -44,6 +44,7 @@ def build_codebook(
         filenames = fnmatch.filter(filenames, '*.[Jj][Pp][Gg]')
         for index, filename in enumerate(filenames):
             n_chunk = int(round(float(n_images) / 100))
+            n_chunk = 1 if n_chunk == 0 else n_chunk
             if index % n_chunk == 0 and verbose:
                 print 'Processed: %s %% of images' % (index*100/n_images)
             # Get the descriptors

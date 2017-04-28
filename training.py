@@ -9,10 +9,60 @@ from sklearn.model_selection import StratifiedShuffleSplit
 from nolearn.dbn import DBN
 import keras
 from keras.models import Sequential
-from keras.layers import Dense, Dropout
+from keras.layers import Dense, Dropout, Conv2D, MaxPooling2D, Flatten
+from keras.utils import to_categorical
+from keras import backend as K
 
 import numpy as np
 from preprocess import load_dataset
+
+
+def train_dog_cat_kaggle(dataset, data_label, test_size=0):
+    batch_size = 32
+    img_rows, img_cols = 200, 1
+    input_shape = (1, img_rows, img_cols) if K.image_data_format() == 'channels_first' else (img_rows, img_cols, 1)
+    n_class = np.unique(data_label).size
+    n_feature = dataset[0].shape[0]
+
+    # Split the dataset into training and test set
+    splitter = StratifiedShuffleSplit(n_splits=1, test_size=test_size)
+    train_index, test_index = splitter.split(dataset, data_label).next()
+    train_data, test_data = np.array(dataset)[train_index], np.array(dataset)[
+        test_index]
+    train_label, test_label = np.array(data_label)[train_index], \
+                              np.array(data_label)[test_index]
+
+    if K.image_data_format() == 'channels_first':
+        train_data = train_data.reshape(train_data.shape[0], 1, img_rows, img_cols)
+        test_data = test_data.reshape(test_data.shape[0], 1, img_rows, img_cols)
+    else:
+        train_data = train_data.reshape(train_data.shape[0], img_rows, img_cols, 1)
+        test_data = test_data.reshape(test_data.shape[0], img_rows, img_cols, 1)
+
+    train_label = to_categorical(train_label, n_class)
+    test_label = to_categorical(test_label, n_class)
+
+    model = Sequential()
+    model.add(
+        Conv2D(16, kernel_size=(3, 1), activation='relu',
+               input_shape=input_shape))
+    model.add(Conv2D(32, (3, 1), activation='relu'))
+    model.add(MaxPooling2D(pool_size=(2, 1)))
+    model.add(Dropout(0.25))
+    model.add(Flatten())
+    model.add(Dense(64, activation='relu'))
+    model.add(Dropout(0.5))
+    model.add(Dense(n_class, activation='softmax'))
+    model.compile(loss=keras.losses.categorical_crossentropy,
+                  optimizer=keras.optimizers.Adadelta(),
+                  metrics=['accuracy'])
+    model.fit(train_data, train_label,
+              batch_size=batch_size,
+              epochs=400,
+              verbose=1,
+              validation_data=(test_data, test_label))
+
+    return model
 
 
 def train_model(alg, dataset, data_label, test_size=0):

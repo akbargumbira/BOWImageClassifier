@@ -7,6 +7,19 @@ import cv2
 import argparse
 from sklearn.metrics import accuracy_score, confusion_matrix
 from preprocess import load_dataset
+from keras.models import load_model
+
+
+class DogCatClassifier(object):
+    """Class DigitNotDigit."""
+    def __init__(self, ):
+        """The constructor."""
+        self._model = load_model('model/dog_cat_kaggle/cnn_kaze.h5')
+
+    def predict(self, data):
+        predictions = self._model.predict(data)
+        label = np.argmax(predictions, 1)
+        return label
 
 
 def classify(classifier, test_data):

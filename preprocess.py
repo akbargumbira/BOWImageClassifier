@@ -1,5 +1,6 @@
 # coding=utf-8
 import os
+import fnmatch
 import time
 import sys
 import argparse
@@ -49,9 +50,9 @@ def get_histogram(feature_detector, bow_extractor, image):
     return histogram
 
 
-def preprocessing_images(feature_detector, codebook_path, image_dir):
-    """Represent training images as histogram of visual codewords
-        accompanied by the label."""
+def get_uiuc_training_data(feature_detector, codebook_path, image_dir):
+    """Represent UIUC training images as histogram of visual codeword
+    accompanied by the label."""
     codebook = load_codebook(codebook_path)
     bow_extractor = get_bow_extractor(feature_detector, codebook)
     # Training data
@@ -73,6 +74,30 @@ def preprocessing_images(feature_detector, codebook_path, image_dir):
     return training_data, training_labels
 
 
+def get_cat_dog_data(feature_detector, codebook_path, image_dir):
+    """Represent cat vs dog kaggle training images as histogram of visual
+    codeword accompanied by the label."""
+    codebook = load_codebook(codebook_path)
+    bow_extractor = get_bow_extractor(feature_detector, codebook)
+    # Training data
+    id, training_data, training_labels = [], [], []
+    for root, dirnames, filenames in os.walk(image_dir):
+        filenames = fnmatch.filter(filenames, '*.[Jj][Pp][Gg]')
+        for index, filename in enumerate(filenames):
+            id.append(filename)
+            image_path = os.path.join(root, filename)
+            image = cv2.imread(image_path)
+            histogram = get_histogram(
+                feature_detector, bow_extractor, image)
+            training_data.extend(histogram)
+            if 'dog' in filename.lower():
+                training_labels.append(1)
+            else:
+                training_labels.append(0)
+
+    return id, training_data, training_labels
+
+
 def load_dataset(dataset_path):
     """Load the dataset from the path."""
     training_data, training_label = load_serialized_object(dataset_path)
@@ -81,6 +106,8 @@ def load_dataset(dataset_path):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser('Preprocess images into dataset')
+    parser.add_argument(
+        '-p', '--problem', help='Problem - uiuc or kaggle', required=True)
     parser.add_argument(
         '-a', '--alg', help='Descriptors algorithm', required=True)
     parser.add_argument(
@@ -113,12 +140,17 @@ if __name__ == '__main__':
         sys.exit()
 
     # Output dataset file
-    output = os.path.join(os.curdir, args['output'])
+    output = args['output']
 
     # Do the preprocessing and serialize it
     print 'Preprocessing images....'
     start = time.time()
-    dataset, data_label = preprocessing_images(detector, args['cbook'], image_dir)
+    if args['problem'].lower() == 'uiuc':
+        dataset, data_label = get_uiuc_training_data(
+            detector, args['cbook'], image_dir)
+    elif args['problem'].lower() == 'kaggle':
+        id, dataset, data_label = get_cat_dog_data(
+            detector, args['cbook'], image_dir)
     serialize_object((dataset, data_label), output)
     print 'Elapsed time: %s sec' % (time.time() - start)
 

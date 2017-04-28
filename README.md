@@ -8,9 +8,10 @@ python codebook.py -i [images_dir] -o [output_file] -a [sift|kaze] -s [vocab_siz
 python codebook.py -i /home/agumbira/dev/data/dog_cat_kaggle/train -o /home/agumbira/dev/python/BOWImageClassifier/model/dog_cat_kaggle/codebook_kaze_200.pkl -a kaze -s 200 --verbose 
 
 ## Preprocessing Images
-python preprocess.py  -a [sift|kaze] -i [root_image_dir] -c [codebook_file] -o [output_file]
+python preprocess.py -p [uiuc|kaggle] -a [sift|kaze] -i [root_image_dir] -c [codebook_file] -o [output_file]
 
-python preprocess.py -a sift -i images/training -c model/codebook.pkl -o model/dataset.dat
+python preprocess.py -p kaggle -a kaze -i /home/akbar/dev/data/dog_cat_kaggle/test_1/ -c /home/akbar/dev/python/BOWImageClassifier/model/dog_cat_kaggle/codebook_kaze_test_200.pkl -o /home/akbar/dev/python/BOWImageClassifier/model/dog_cat_kaggle/training_data_kaze_200.dat
+
 
 
 ## Training
