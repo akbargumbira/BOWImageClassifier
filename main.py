@@ -3,7 +3,7 @@ import numpy as np
 import cv2
 from sklearn.cross_validation import train_test_split
 from sklearn.metrics import classification_report
-from codebook import load_codebook, build_codebook
+from codebook import load_codebook, build_codebook, build_codebook_scikit
 from training import train_model, train_dog_cat_kaggle
 from preprocess import load_dataset, get_cat_dog_data
 from classify import DogCatClassifier
@@ -54,21 +54,21 @@ import keras.backend as K
 #     verbose=True)
 
 # 2 Preprocessing all the images into dataset using defined codebook
-detector = cv2.KAZE_create()
-# codebook_path = '/home/akbar/dev/python/BOWImageClassifier/model/dog_cat_kaggle/codebook_kaze_test_200.pkl'
-# codebook_path = '/home/agumbira/dev/python/BOWImageClassifier/model/dog_cat_kaggle/codebook_kaze_200.pkl'
-# test_dir = '/home/akbar/dev/data/dog_cat_kaggle/test/'
-# test_dir1 = '/home/akbar/dev/data/dog_cat_kaggle/test_1/'
-test_dir1 = '/home/agumbira/dev/data/dog_cat_kaggle/test_1/'
-test_dir2 = '/home/akbar/dev/data/dog_cat_kaggle/test_2/'
-
-# dataset_path = '/home/akbar/dev/python/BOWImageClassifier/model/dog_cat_kaggle/training_data_kaze_test_200.dat'
-dataset_path = '/home/agumbira/dev/python/BOWImageClassifier/model/dog_cat_kaggle/training_data_kaze_200.dat'
-# model_output = '/home/akbar/dev/python/BOWImageClassifier/model/dog_cat_kaggle/cnn_kaze.h5'
-model_output = '/home/agumbira/dev/python/BOWImageClassifier/model/dog_cat_kaggle/ann_kaze.h5'
-dataset, data_label = load_dataset(dataset_path)
-model = train_dog_cat_kaggle(dataset, data_label, 0.1)
-model.save(model_output)
+# detector = cv2.KAZE_create()
+# # codebook_path = '/home/akbar/dev/python/BOWImageClassifier/model/dog_cat_kaggle/codebook_kaze_test_200.pkl'
+# # codebook_path = '/home/agumbira/dev/python/BOWImageClassifier/model/dog_cat_kaggle/codebook_kaze_200.pkl'
+# # test_dir = '/home/akbar/dev/data/dog_cat_kaggle/test/'
+# # test_dir1 = '/home/akbar/dev/data/dog_cat_kaggle/test_1/'
+# test_dir1 = '/home/agumbira/dev/data/dog_cat_kaggle/test_1/'
+# test_dir2 = '/home/akbar/dev/data/dog_cat_kaggle/test_2/'
+#
+# # dataset_path = '/home/akbar/dev/python/BOWImageClassifier/model/dog_cat_kaggle/training_data_kaze_test_200.dat'
+# dataset_path = '/home/agumbira/dev/python/BOWImageClassifier/model/dog_cat_kaggle/training_data_kaze_200.dat'
+# # model_output = '/home/akbar/dev/python/BOWImageClassifier/model/dog_cat_kaggle/cnn_kaze.h5'
+# model_output = '/home/agumbira/dev/python/BOWImageClassifier/model/dog_cat_kaggle/ann_kaze.h5'
+# dataset, data_label = load_dataset(dataset_path)
+# model = train_dog_cat_kaggle(dataset, data_label, 0.1)
+# model.save(model_output)
 # img_rows, img_cols = 20, 10
 # id, data, label = get_cat_dog_data(detector, codebook_path, test_dir)
 # id1, data1, label1 = get_cat_dog_data(detector, codebook_path, test_dir1)
@@ -89,3 +89,10 @@ model.save(model_output)
 
 print 'tes'
 
+
+test_small = '/home/akbar/dev/data/dog_cat_kaggle/test_small/'
+codebook_path = '/home/akbar/dev/python/BOWImageClassifier/model/dog_cat_kaggle/codebook_kaze_test_small_10.pkl'
+codewords = build_codebook(test_small, codebook_path, alg='kaze', vocab_size=10)
+codewords_scikit = build_codebook_scikit(test_small, codebook_path, alg='kaze',vocab_size=10)
+
+print 'tes'

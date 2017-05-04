@@ -6,6 +6,8 @@ import fnmatch
 import pickle
 import argparse
 import cv2
+import numpy as np
+from sklearn.cluster import KMeans
 
 
 def build_codebook(
@@ -60,7 +62,52 @@ def build_codebook(
     codewords = bow.cluster()
     codebook_file = open(output_path, 'wb')
     pickle.dump(codewords, codebook_file)
+    return codewords
 
+
+def build_codebook_scikit(
+        input_dir, output_path, alg='sift', vocab_size=240, verbose=False):
+    if alg.lower() == 'sift':
+        detector = cv2.xfeatures2d.SIFT_create()
+    elif alg.lower() == 'kaze':
+        detector = cv2.KAZE_create()
+    else:
+        print 'Unknown algorithm. Option: sift | kaze'
+        return
+
+    images_descriptors = []
+    # Read images
+    for root, dirnames, filenames in os.walk(input_dir):
+        if verbose:
+            print 'Extracting descriptors of images in: %s ...' % root
+        n_images = len(filenames)
+        filenames = fnmatch.filter(filenames, '*.[Jj][Pp][Gg]')
+        for index, filename in enumerate(filenames):
+            n_chunk = int(round(float(n_images) / 100))
+            n_chunk = 1 if n_chunk == 0 else n_chunk
+            if index % n_chunk == 0 and verbose:
+                print 'Processed: %s %% of images' % (index*100/n_images)
+            # Get the descriptors
+            image_path = os.path.join(root, filename)
+            image = cv2.imread(image_path)
+            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+            keypoints, descriptors = detector.detectAndCompute(gray, None)
+            images_descriptors.extend(descriptors)
+
+    # Cluster all the descriptors and save it into output file
+    if verbose:
+        print 'Clustering all the descriptors...'
+
+    kmeans = KMeans(n_clusters=vocab_size)
+    kmeans.fit(images_descriptors)
+    labels = kmeans.labels_
+    codewords = kmeans.cluster_centers_
+    # term_crit = 0, 0, 0
+    # attempts = 3
+    # flags = cv2.KMEANS_PP_CENTERS
+    # ret, labels, centroids = cv2.kmeans(
+    #     np.array(images_descriptors), vocab_size, None, term_crit, attempts, flags)
+    return labels, codewords
 
 def load_codebook(file_path):
     """Load the codebook from a file.
