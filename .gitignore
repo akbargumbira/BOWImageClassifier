@@ -4,3 +4,4 @@ venv/
 .idea/
 images/
 image/
+*.ipynb_checkpoints
